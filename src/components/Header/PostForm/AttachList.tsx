@@ -4,8 +4,10 @@ import InsertPhotoIcon from "@mui/icons-material/InsertPhoto";
 import LibraryMusicIcon from "@mui/icons-material/LibraryMusic";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import PlaceIcon from "@mui/icons-material/Place";
-import styled from 'styled-components';
-import React from "react";
+import styled from "styled-components";
+import React, { useState } from "react";
+import Picker from "emoji-picker-react";
+import { primary } from "../Header";
 
 const Attach = styled.div`
   width: calc(100% - 20px);
@@ -38,20 +40,19 @@ const Attach = styled.div`
     &--item {
       min-width: fit-content;
       height: 100%;
-      background-color: #15ff00;
+      background-color: white;
       border-radius: 5px;
       scroll-snap-align: start;
       position: relative;
 
-      
-      img, video{
+      img,
+      video {
         width: 100%;
         height: 100%;
         object-fit: contain;
-        
       }
     }
-    &--close{
+    &--close {
       position: absolute;
       width: 20px;
       height: 20px;
@@ -62,8 +63,8 @@ const Attach = styled.div`
       background-color: white;
       border-radius: 50%;
       font-size: 16px;
-      
-      &:hover{
+
+      &:hover {
         color: hsl(0, 79.1044776119403%, 73.72549019607844%);
       }
     }
@@ -112,50 +113,127 @@ const Attach = styled.div`
   }
 `;
 
-export default function AttachList() {
+interface Media {
+  id: string;
+  type: string;
+}
+interface AttachProps {
+  onEmoji: (event: React.MouseEvent<HTMLButtonElement>) => void;
+}
+
+export default function AttachList({ onEmoji }: AttachProps) {
+  const [media, setMedia] = useState<Media[]>([]);
+  const [isDisplayEmojiPicker, setIsDisplayEmojiPicker] = useState(false);
+  const handleGetImages = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files ? e.target.files : null;
+    if (files) {
+      let urls = [];
+      for (let i = 0; i < files.length; i++) {
+        if (
+          files[i].name.endsWith(".png") ||
+          files[i].name.endsWith(".jpg") ||
+          files[i].name.endsWith(".gif")
+        ) {
+          const file = new Blob([files[i]], { type: "image/png" });
+          const url = URL.createObjectURL(file);
+          urls.push({ id: url, type: "image" });
+        }
+      }
+      setMedia([...media, ...urls]);
+    }
+  };
+  const handleGetMedias = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files ? e.target.files : null;
+    if (files) {
+      let urls = [];
+      for (let i = 0; i < files.length; i++) {
+        if (
+          files[i].name.endsWith(".mp4") ||
+          files[i].name.endsWith(".wav") ||
+          files[i].name.endsWith(".mp3")
+        ) {
+          const file = new Blob([files[i]], { type: "video/mp4" });
+          const url = URL.createObjectURL(file);
+          urls.push({ id: url, type: "video" });
+        }
+      }
+      setMedia([...media, ...urls]);
+    }
+  };
+  const handleAddEmoji = (
+    e: React.MouseEvent<Element, MouseEvent>,
+    emojiObject: any
+  ) => {
+    onEmoji(emojiObject.emoji);
+  };
+  const handleDeleteAttach = (index : number) =>{
+      const newMedia = [...media].filter((item,ind)=>{return ind !== index});
+      
+      setMedia(newMedia);  
+  }
   return (
     <Attach>
-      <div className="attach--title">Add to this post</div>
+      <div className="attach--title"></div>
       <div className="attach--items">
-        <div className="attach--items--item">
+        <label className="attach--items--item attach--imgs" htmlFor="file">
           <InsertPhotoIcon />
-        </div>
-        <div className="attach--items--item">
+          <input
+            type="file"
+            id="file"
+            hidden
+            onChange={handleGetImages}
+            multiple
+          />
+        </label>
+        <div
+          className="attach--items--item attach--emoji"
+          onClick={() => setIsDisplayEmojiPicker(!isDisplayEmojiPicker)}
+        >
           <InsertEmoticonIcon />
         </div>
-        <div className="attach--items--item">
+        {isDisplayEmojiPicker && (
+            <Picker
+              onEmojiClick={handleAddEmoji}
+              pickerStyle={{
+                position: "absolute",
+                left: "550px",
+                bottom: "0px",
+              }}
+            ></Picker>
+          )}
+        <label className="attach--items--item attach--media" htmlFor="media">
           <LibraryMusicIcon />
-        </div>
-        <div className="attach--items--item">
+          <input
+            type="file"
+            id="media"
+            hidden
+            onChange={handleGetMedias}
+            multiple
+          />
+        </label>
+        <div className="attach--items--item attach--location">
           <PlaceIcon />
         </div>
-        <div className="attach--items--item">
+        <div className="attach--items--item attach--menu">
           <MoreHorizIcon />
         </div>
       </div>
-      <div className="attach--choose">
-        <div className="attach--choose--item">
-          <img
-            src="https://play-lh.googleusercontent.com/JRd05pyBH41qjgsJuWduRJpDeZG0Hnb0yjf2nWqO7VaGKL10-G5UIygxED-WNOc3pg"
-            alt=""
-          />
-          <CancelIcon className="attach--choose--close"></CancelIcon>
+      {media.length > 0 && (
+        <div className="attach--choose">
+          {media.map((item, index) => {
+            return (
+              <div className="attach--choose--item" key={index}>
+                {item.type === "image" ? (
+                  <img src={item.id} alt="" />
+                ) : (
+                  <video src={item.id} />
+                )}
+                <CancelIcon className="attach--choose--close" onClick={()=>handleDeleteAttach(index)}></CancelIcon>
+              </div>
+            );
+          })}
         </div>
-        <div className="attach--choose--item">
-          <img
-            src="https://play-lh.googleusercontent.com/JRd05pyBH41qjgsJuWduRJpDeZG0Hnb0yjf2nWqO7VaGKL10-G5UIygxED-WNOc3pg"
-            alt=""
-          />
-          <CancelIcon className="attach--choose--close"></CancelIcon>
-        </div>
-        <div className="attach--choose--item">
-          <img
-            src="https://1.bp.blogspot.com/-ggZGcpjEPr4/YE4tkzN2uOI/AAAAAAAA-EM/WoK2AuUfaEUnQLsS2j1IFpAdK29FkyHyACLcBGAsYHQ/s0/hoat-hinh-buon-nu%2B%252810%2529.jpg"
-            alt=""
-          />
-          <CancelIcon className="attach--choose--close"></CancelIcon>
-        </div>
-      </div>
+      )}
     </Attach>
   );
 }
